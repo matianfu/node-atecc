@@ -12,7 +12,14 @@ const i2c1 = i2c.open(1, err => {
 
       ;(async () => {
         let config = await ecc.atcabReadConfigZoneAsync()
+  
         console.log(config)
+       
+        await ecc.writeAWSConfigAsync() 
+
+        config = await ecc.atcabReadConfigZoneAsync()
+        console.log(config)
+
       })().then(x => x).catch(e => console.log(e))
 
     })
