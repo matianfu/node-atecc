@@ -1,4 +1,5 @@
 const Promise = require('bluebird')
+const fs = require('fs')
 const i2c = require('i2c-bus')
 const Ecc = require('./lib/ecc') 
 
@@ -36,10 +37,21 @@ const i2c1 = i2c.open(1, err => {
 
         console.log(ecc.addr.toString(16))
 
-        let pubkey
+        let serial_number = Buffer.concat([
+          config.slice(0, 4),
+          config.slice(8, 13)
+        ])
 
+        let rev_num = config.slice(4, 8)
+
+        console.log('serial number', serial_number)
+        console.log('revision number', rev_num)
+
+        let pubkey
+/**
         pubkey = await ecc.atcabGenKeyAsync(0)
         console.log('pubkey', pubkey)
+*/
 
         pubkey = await ecc.atcabGenPubKeyAsync(0)
         console.log('pubkey', pubkey)
@@ -50,6 +62,10 @@ const i2c1 = i2c.open(1, err => {
 //        await ecc.atcabGenKeyAsync(3)
 //        await ecc.atcabGenKeyAsync(7)
 
+        let csr = await ecc.awsGenCsrAsync ()
+        console.log(csr)
+
+        fs.writeFileSync('cert.csr', csr)
 
       })().then(x => x).catch(e => console.log(e))
 
