@@ -9,12 +9,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "asn1js": "^2.0.21",
     "bluebird": "^3.5.2",
     "debug": "^3.1.0",
     "deep-freeze": "0.0.1",
     "i2c-bus": "^4.0.1",
     "ioctl": "^2.0.1",
-    "node-crc": "^1.2.2"
+    "node-crc": "^1.2.2",
+    "pkijs": "^2.1.67"
   },
   "devDependencies": {
     "eslint": "^5.5.0",

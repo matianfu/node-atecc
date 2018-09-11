@@ -35,7 +35,7 @@ const i2c1 = i2c.open(1, err => {
         console.log('done')
 */
 
-        console.log(ecc.addr.toString(16))
+//        console.log(ecc.addr.toString(16))
 
         let serial_number = Buffer.concat([
           config.slice(0, 4),
@@ -54,7 +54,7 @@ const i2c1 = i2c.open(1, err => {
 */
 
         pubkey = await ecc.atcabGenPubKeyAsync(0)
-        console.log('pubkey', pubkey)
+        console.log('pubkey', pubkey.toString('hex'))
 
 //        pubkey = await ecc.atcabGenPub
 
@@ -63,7 +63,7 @@ const i2c1 = i2c.open(1, err => {
 //        await ecc.atcabGenKeyAsync(7)
 
         let csr = await ecc.awsGenCsrAsync ()
-        console.log(csr)
+        console.log('csr', csr)
 
         fs.writeFileSync('cert.csr', csr)
 
