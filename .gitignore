@@ -1,4 +1,8 @@
 node_modules/
 
+*.der
+*.sig
+*.bin
+*.pem
 *.csr
 *.swp
