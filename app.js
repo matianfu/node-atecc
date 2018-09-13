@@ -47,6 +47,9 @@ const i2c1 = i2c.open(1, err => {
           config.slice(8, 13)
         ])
 
+        let revision = await ecc.revisionAsync()
+        console.log('revision', revision)
+
         let rev_num = config.slice(4, 8)
 
         console.log('serial number', serial_number)
