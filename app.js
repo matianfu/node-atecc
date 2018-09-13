@@ -1,7 +1,12 @@
 const Promise = require('bluebird')
 const fs = require('fs')
+const crypto = require('crypto')
+
 const i2c = require('i2c-bus')
+
 const Ecc = require('./lib/ecc') 
+const { createCsrAsync } = require('./lib/cert')
+
 
 const i2c1 = i2c.open(1, err => {
   if (err) {
@@ -47,14 +52,31 @@ const i2c1 = i2c.open(1, err => {
         console.log('serial number', serial_number)
         console.log('revision number', rev_num)
 
-        let pubkey
-/**
-        pubkey = await ecc.atcabGenKeyAsync(0)
-        console.log('pubkey', pubkey)
-*/
+        let key = await ecc.atcabGenKeyAsync(0)
+        console.log('pubkey', key.length, key)
 
-        pubkey = await ecc.atcabGenPubKeyAsync(0)
-        console.log('pubkey', pubkey.toString('hex'))
+        key = await ecc.atcabGenPubKeyAsync(0)
+
+        console.log('pubkey', key.length, key)
+
+        let signAsync = async data => ecc.atcabSignAsync(0, data)
+       
+        let { ber, pem, tbs, digest, sig, csr } = 
+          await createCsrAsync('Example Inc', 'Example Device', key, signAsync)
+
+        console.log('ber', ber)
+        fs.writeFileSync('pubkey.ber', ber)
+        console.log('pem', pem)
+        console.log('tbs', tbs.length, tbs)
+        console.log('digest', digest.length, digest)
+        console.log('sig', sig.length, sig)
+
+        let verify = crypto.createVerify('SHA256')
+        verify.update(tbs)
+        
+        console.log(verify.verify(pem, sig))
+
+        fs.writeFileSync('cert.csr', csr)
 
 //        pubkey = await ecc.atcabGenPub
 
@@ -62,10 +84,11 @@ const i2c1 = i2c.open(1, err => {
 //        await ecc.atcabGenKeyAsync(3)
 //        await ecc.atcabGenKeyAsync(7)
 
+/**
         let csr = await ecc.awsGenCsrAsync ()
         console.log('csr', csr)
-
         fs.writeFileSync('cert.csr', csr)
+*/
 
       })().then(x => x).catch(e => console.log(e))
 
