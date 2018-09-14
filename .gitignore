@@ -1,5 +1,7 @@
 node_modules/
 
+*.key
+*.crt
 *.der
 *.sig
 *.bin
