@@ -55,6 +55,14 @@ const i2c1 = i2c.open(1, err => {
         console.log('serial number', serial_number)
         console.log('revision number', rev_num)
 
+        for (let i = 0; i < 16; i++) {
+          let keyValid = await ecc.keyValidAsync(i)
+          console.log('key valid', keyValid)
+        }
+
+        let stateInfo = await ecc.stateInfoAsync()
+        console.log('state info', stateInfo)
+
         let key = await ecc.atcabGenKeyAsync(0)
         console.log('pubkey', key.length, key)
 
@@ -62,24 +70,43 @@ const i2c1 = i2c.open(1, err => {
 
         console.log('pubkey', key.length, key)
 
-        let signAsync = async data => ecc.atcabSignAsync(0, data)
+//        let signAsync = async data => ecc.atcabSignAsync(0, data)
+
+        let signAsync = async data => ecc.signAsync(0, data)
        
-        let { ber, pem, tbs, digest, sig, csr } = 
-          await createCsrAsync('Example Inc', 'Example Device', key, signAsync)
+        let r = await createCsrAsync('Example Inc', 'Example Device', key, signAsync)
 
-        console.log('ber', ber)
-        fs.writeFileSync('pubkey.ber', ber)
-        console.log('pem', pem)
-        console.log('tbs', tbs.length, tbs)
-        console.log('digest', digest.length, digest)
-        console.log('sig', sig.length, sig)
+        let { subjectPublicKeyInfoPEM, toBeSigned, 
+          signature, signatureBER, certificationRequestBER } = r
 
+/**         
+
+        let verifyx = await ecc.verifyExternAsync(digest, sig, key)
+        console.log('verify ---------------------------')
+        console.log(verifyx)
+        console.log('verify ---------------------------')
+
+        let verify2 = await ecc.verifyExternAsync(
+          crypto.createHash('sha256').update('hello').digest()
+        , sig, key)
+
+        console.log('verify ---------------------------')
+        console.log(verify2)
+        console.log('verify ---------------------------')
+*/
         let verify = crypto.createVerify('SHA256')
-        verify.update(tbs)
-        
-        console.log(verify.verify(pem, sig))
+        verify.update(toBeSigned)
 
-        fs.writeFileSync('cert.csr', csr)
+        console.log(subjectPublicKeyInfoPEM)
+        console.log('toBeSigned', toBeSigned.length, toBeSigned)
+        console.log('signature', signature.length, signature)
+        console.log('signatureBER', signatureBER.length, signatureBER)
+        console.log('certificationRequestBER',
+          certificationRequestBER.length, certificationRequestBER)
+        
+        console.log(verify.verify(subjectPublicKeyInfoPEM, signatureBER))
+
+//         fs.writeFileSync('cert.csr', csr)
 
 //        pubkey = await ecc.atcabGenPub
 
