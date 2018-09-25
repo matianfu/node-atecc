@@ -111,3 +111,10 @@ with open('device.crt', 'wb') as f:
     f.write(device_cert.public_bytes(encoding=serialization.Encoding.PEM))
 
 print('----- END -----')
+
+
+
+
+
+
+

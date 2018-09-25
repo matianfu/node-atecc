@@ -1,5 +1,6 @@
 const Promise = require('bluebird')
-const fs = require('fs')
+const fs = Promise.promisifyAll(require('fs'))
+const child = Promise.promisifyAll(require('child_process'))
 const crypto = require('crypto')
 
 const i2c = require('i2c-bus')
@@ -119,6 +120,37 @@ const i2c1 = i2c.open(1, err => {
         console.log('csr', csr)
         fs.writeFileSync('cert.csr', csr)
 */
+
+//        let csrPEM = 
+
+//        fs.writeFileAsync('device.csr', 
+
+        let csrPEM = '-----BEGIN CERTIFICATE REQUEST-----\n' +
+          certificationRequestBER.toString('base64') + 
+          '\n-----END CERTIFICATE REQUEST-----'
+
+        console.log(csrPEM)
+
+        await new Promise((resolve, reject) => {
+          let cmd = `openssl req -verify -noout -in <(echo -e "${csrPEM}")` 
+          child.exec(cmd, { shell: '/bin/bash' }, (err, stdout, stderr) => {
+            if (err) reject(err)
+            if (stderr.trim() !== 'verify OK') reject('openssl output (stderr) does not match verify OK')
+            resolve()
+          })
+        })
+
+//        let sslVerify = await child.execAsync(`openssl req -verify -in <(echo -e "${csrPEM}")`, { shell: '/bin/bash' })
+
+
+        await fs.writeFileAsync('deviceCsr.der', certificationRequestBER)
+
+        await fs.writeFileAsync('device.csr', 
+          '-----BEGIN CERTIFICATE REQUEST-----\n' +
+          certificationRequestBER.toString('base64') + 
+          '\n-----END CERTIFICATE REQUEST-----')
+
+
 
       })().then(x => x).catch(e => console.log(e))
 
