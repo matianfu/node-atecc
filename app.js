@@ -4,10 +4,8 @@ const child = Promise.promisifyAll(require('child_process'))
 const crypto = require('crypto')
 
 const i2c = require('i2c-bus')
-
 const Ecc = require('./lib/ecc') 
 const { createCsrAsync } = require('./lib/cert')
-
 
 const i2c1 = i2c.open(1, err => {
   if (err) {
@@ -49,7 +47,6 @@ const i2c1 = i2c.open(1, err => {
         ])
 
         let revision = await ecc.revisionAsync()
-        console.log('revision', revision)
 
         let rev_num = config.slice(4, 8)
 
@@ -138,16 +135,6 @@ const i2c1 = i2c.open(1, err => {
         })
 
 //        let sslVerify = await child.execAsync(`openssl req -verify -in <(echo -e "${csrPEM}")`, { shell: '/bin/bash' })
-
-
-        await fs.writeFileAsync('deviceCsr.der', certificationRequestBER)
-
-        await fs.writeFileAsync('device.csr', 
-          '-----BEGIN CERTIFICATE REQUEST-----\n' +
-          certificationRequestBER.toString('base64') + 
-          '\n-----END CERTIFICATE REQUEST-----')
-
-
 
       })().then(x => x).catch(e => console.log(e))
 
