@@ -53,9 +53,6 @@ const i2c1 = i2c.open(1, err => {
 
         let rev_num = config.slice(4, 8)
 
-        console.log('serial number', serial_number)
-        console.log('revision number', rev_num)
-
         for (let i = 0; i < 16; i++) {
           let keyValid = await ecc.keyValidAsync(i)
           console.log('key valid', keyValid)

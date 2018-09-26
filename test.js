@@ -1,9 +1,13 @@
-const fs = require('fs')
-const asn1js = require('asn1js')
-const pkijs = require('pkijs')
-const Certificate = pkijs.Certificate
+const child = require('child_process')
 
-const asn1 = asn1js.fromBER(fs.readFileSync('./cert.csr'))
-const cert = new Certificate({ shcema: asn1.result })
+child.exec('openssl req -in device.csr -noout -pubkey', (err, stdout) => {
+  console.log(stdout)
+  let b64 = stdout.split('\n')
+    .map(x => x.trim())
+    .filter(x => !!x && !x.startsWith('--')) 
+    .join('')
 
-console.log(cert)
+  console.log(b64)
+  let b = Buffer.from(b64, 'base64')
+  console.log(b.length, b)
+})
