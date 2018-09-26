@@ -16,7 +16,13 @@ const i2c1 = i2c.open(1, err => {
       console.log('ecc initialized', '0x' + ecc.addr.toString(16).toUpperCase())
 
       ;(async () => {
-        let config = await ecc.atcabReadConfigZoneAsync()
+        let config = await ecc.readConfigZoneAsync()
+        let arr = Array.from(config)
+          .map(x => '0x' + x.toString(16).padStart(2, '0'))
+
+        console.log(JSON.stringify(arr).replace(/"/g, ''))
+
+          console.log(config)
   
 //        console.log(config)
 //        console.log(config[86], config[87]) 
@@ -40,7 +46,7 @@ const i2c1 = i2c.open(1, err => {
 */
 
 //        console.log(ecc.addr.toString(16))
-
+/**
         let serial_number = Buffer.concat([
           config.slice(0, 4),
           config.slice(8, 13)
@@ -73,7 +79,7 @@ const i2c1 = i2c.open(1, err => {
 
         let { subjectPublicKeyInfoPEM, toBeSigned, 
           signature, signatureBER, certificationRequestBER } = r
-
+*/
 /**         
 
         let verifyx = await ecc.verifyExternAsync(digest, sig, key)
@@ -89,6 +95,7 @@ const i2c1 = i2c.open(1, err => {
         console.log(verify2)
         console.log('verify ---------------------------')
 */
+/*
         let verify = crypto.createVerify('SHA256')
         verify.update(toBeSigned)
 
@@ -108,7 +115,7 @@ const i2c1 = i2c.open(1, err => {
 //        await ecc.atcabGenKeyAsync(2)
 //        await ecc.atcabGenKeyAsync(3)
 //        await ecc.atcabGenKeyAsync(7)
-
+*/
 /**
         let csr = await ecc.awsGenCsrAsync ()
         console.log('csr', csr)
@@ -118,7 +125,7 @@ const i2c1 = i2c.open(1, err => {
 //        let csrPEM = 
 
 //        fs.writeFileAsync('device.csr', 
-
+/*
         let csrPEM = '-----BEGIN CERTIFICATE REQUEST-----\n' +
           certificationRequestBER.toString('base64') + 
           '\n-----END CERTIFICATE REQUEST-----'
@@ -133,7 +140,7 @@ const i2c1 = i2c.open(1, err => {
             resolve()
           })
         })
-
+*/
 //        let sslVerify = await child.execAsync(`openssl req -verify -in <(echo -e "${csrPEM}")`, { shell: '/bin/bash' })
 
       })().then(x => x).catch(e => console.log(e))
