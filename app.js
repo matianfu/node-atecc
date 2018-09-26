@@ -4,9 +4,18 @@ const child = Promise.promisifyAll(require('child_process'))
 const crypto = require('crypto')
 
 const i2c = require('i2c-bus')
-const Ecc = require('./lib/ecc') 
-const { createCsrAsync } = require('./lib/cert')
+const initEcc = require('./lib/ecc2') 
 
+initEcc(1, (err, ecc) => {
+  ecc.status((err, status) => {
+    console.log(err, status)
+  })
+})
+
+
+//const { createCsrAsync } = require('./lib/cert')
+
+/**
 const i2c1 = i2c.open(1, err => {
   if (err) {
     console.log('failed to open i2c1')
@@ -26,6 +35,7 @@ const i2c1 = i2c.open(1, err => {
   
 //        console.log(config)
 //        console.log(config[86], config[87]) 
+*/
 /**
         config = await ecc.writeAWSConfigAsync() 
 
@@ -143,10 +153,12 @@ const i2c1 = i2c.open(1, err => {
 */
 //        let sslVerify = await child.execAsync(`openssl req -verify -in <(echo -e "${csrPEM}")`, { shell: '/bin/bash' })
 
+/**
       })().then(x => x).catch(e => console.log(e))
 
     })
   }
 })
+*/
 
 
