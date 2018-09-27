@@ -7,8 +7,8 @@ const i2c = require('i2c-bus')
 const initEcc = require('./lib/ecc2') 
 
 initEcc(1, (err, ecc) => {
-  ecc.status((err, status) => {
-    console.log(err, status)
+  ecc.preset((err, res) => {
+    console.log(err, res)
   })
 })
 
