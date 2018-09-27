@@ -1,8 +1,12 @@
-> datasheet 4.1 
+# Configuration
+
+> datasheet 4.1
 > 16 bit (2 byte) integers, typically Param2, SlotConfig or KeyConfig, appear on the bus least-significant byte first.
 
 
-Factory Config
+## Factory Config
+
+The following configuration are read out of a chip. The first 16 bytes are device specific.
 
 ```
    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
@@ -17,7 +21,9 @@ Factory Config
 7x 3C 00 3C 00 3C 00 3C 00 3C 00 3C 00 3C 00 1C 00
 ```
 
-AWS Config
+## AWS Config
+
+This is the configuration used in Microchip Zero Touch project.
 
 1. the first 16 bytes are device specific and are not copied
 2. i2c address are set to 0xB0 for pre-configured device
@@ -206,3 +212,31 @@ Slot <13>
 Slot <14>
 
 Slot <15>
+
+# Preconfigure
+
+> `preconfigure_crypto_device()` in ecc_configure.c
+
+1. write the aws configuration to the configuration zone.
+2. lock configuration zone.
+3. lock data zone.
+4. wake then sleep to have the changes to take effect.
+5. generate private keys in slot 0, 2, 3, and 7, respectively.
+
+----
+
+```
+// local configure_device
+detect_crypto_device()
+preconfigure_crypto_device()
+check_config_compatibility() (not used)
+
+0, 2, 8, 9, 10, 11, 12, 14
+```
+
+Both in factory config and aws config, userextra config[0x84] and selector config[0x85] are '00'. 
+
+After aws_config written, the config zone is read back and compared with original value byte by byte. The differences are:
+
+config [0x86] & config [0x87], which remain 0x55 (unlocked).
+
