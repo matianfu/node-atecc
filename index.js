@@ -1,228 +1,170 @@
+const Promise = require('bluebird')
+const fs = Promise.promisifyAll(require('fs'))
+const child = Promise.promisifyAll(require('child_process'))
+const crypto = require('crypto')
+
+const { createCsrAsync } = require('./lib/cert') 
+
 const i2c = require('i2c-bus')
+const initEcc = require('./lib/ecc') 
+
+initEcc(1, (err, ecc) => {
+  ecc.preset(err => {
+    ecc.generateCsr({ o: 'hello', cn: 'world' }, (err, csr) => {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log('done')
+      }
+    })
+  })
+})
+
 
 /**
-There is a _gDevice which is initialized by atcab_init(cfg), where cfg is
-
-ATCAIfaceCfg cfg_ateccx08a_i2c_default = { 
-  .iface_type             = ATCA_I2C_IFACE,
-  .devtype                = ATECC508A,
-  .atcai2c.slave_address  = 0xC0,
-  .atcai2c.bus            = 2,
-  .atcai2c.baud           = 400000,
-  //.atcai2c.baud = 100000,
-  .wake_delay             = 1500,
-  .rx_retries             = 20
-};
-
-This device is created by newATCADevice(cfg)
-
-->mCommands = newATCACommand(cfg -> devtype)
-  ca_cmd->dt = device_type
-  ca_cmd->clock_divider = 0
-  ca_cmd->execution_time_msec = ??? not initialized after malloc
-->mIface = newATCAIface(cfg)
-  ca_iface->mType = cfg->iface_type
-  ca_iface->mIfaceCFG=cfg
-  
-  hal_iface_init: set hal methods to static methods
-    halinit
-    halpostinit
-    halreceive
-    halsend
-    halsleep
-    halwake
-    helidle
-    halrelease
-    hal_data = null
-
-  then
-    ca_iface->atinit = hal->halinit
-    ...
-
-  typedef enum
-  {
-    ATCA_I2C_IFACE,
-    ATCA_SWI_IFACE,
-    ATCA_UART_IFACE,
-    ATCA_SPI_IFACE,
-    ATCA_HID_IFACE,
-    ATCA_CUSTOM_IFACE,
-    // additional physical interface types here
-    ATCA_UNKNOWN_IFACE,
-  } ATCAIfaceType;
-
-  for SAMG55 demo, ATCA_I2C_IFACE is used. for linux userspace hal, no idea.
-*/
-
-const ATECC508_ADDR = 0x60
-
-const ATCA_ECC_CONFIG_SIZE = 128 // /lib/atca_command.h +268
-const ATCA_BLOCK_SIZE = 32 // atca_command.h +262
-const ATCA_WORD_SIZE = 4 // atca_command.h +263
-
-const cfg_ateccx08a_i2c_default = {
-  // /lib/atca_cfgs.c +44
-  iface_type: 'ATCA_I2C_IFACE',
-  devtype: 'ATECC508A',
-  atcai2c: {
-    slave_address: 0xC0,
-    bus: 2,
-    baud: 400000,
-  },
-  wake_delay: 1500,
-  rx_retries: 20
-}
-
-// default address for unconfigured dev. provisioning_task.h +76
-const ECCx08A_DEFAULT_ADDRESS = 0xC0 
-
-// atcab_init has some extra work on 608
-
-/**
-  provisioning_task.c detect_crypto_device() 
-  ecc_configure.c detect_crypto_device()
-  atcab_init
-  atcab_read_config_zone(&config)
-
-*/
-
-/**
-const atcab_get_zone_size = (zone, slot) => {
-  switch (zone) {
-    case 'ATCA_ZONE_CONFIG':
-      return 128
-    case 'ATCA_ZONE_OTP':
-      return 64
-    case 'ATCA_ZONE_DATA':
-      if (slot < 8) return 36
-      else if (slot === 8) return 416
-      else if (slot < 16) return 72
-      else return 0
-  }
-}
-*/
-
-const atcab_wakup = () => {
-
-}
-
-const atsend = () => {
-}
-
-const atreceive = () => {
-}
-
-// lib/basic/atca_basic.c +392
-const atcab_execute_command = packet => {
-  
-}
-
-// lib/atca_command.c +499
-const atRead = (ca_cmd, packet) => {
-  packet.opcode = ATCA_READ
-  packet.txsize = READ_COUNT
-  
-  if (packet.param1 & 0x80 === 0) {
-    packet.rxsize = READ_4_RSP_SIZE
-  } else {
-    packet.rxsize = READ_32_RSP_SIZE
-  }
-
-  atCalcCrc(packet)
-  return 
-} 
-
-// lib/basic/atca_basic.c + 290
-// uint16 addr
-const atcab_get_addr = (zone, slot, block, offset) => {
-  let addr = 0
-
-  offset = offset & 0x07
-  if (zone is config or otp) { // CONFIG or OTP
-    addr = block << 3
-    addr |= offset 
-  } else {  // DATA
-    addr = slot << 3
-    addr |= offset 
-    addr |= block << 8
-  }
-}
-
-
-// lib/basic/atca_basic_read.c 60
-// zone, slot, block, offset, len
-const atcab_read_zone = (zone, slot, block, offset, len) => {
-
-  let addr = atcab_get_addr(zone, slot, block, offset) 
-
-  if (len === ATCA_BLOCK_SIZE) zone = zone | ATCA_ZONE_READWRITE_32
-
-  packet.param1 = zone
-  packet.param2 = addr
-
-  atRead(null, packet)
-  atcab_execute_command(packet)
-} 
-
-// lib/basic/atca_basic_read.c 610
-// return buffer or throw error
-const atcab_read_bytes_zone = (zone, slot, offset, size) => {
-  // TODO validate args   
-  // TODO support zone other than config
-  let zone_size = 128
-
-  let data_idx = 0
-  let cur_block = 0
-  let cur_offset = 0
-  let read_size = ATCA_BLOCK_SIZE 
-  let read_buf_idx = 0
-  let copy_length = 0
-  let read_offset = 0
-  // read_buf[32] ???
-
-  // read block by block 
-  let cur_block = offset / ATCA_BLOCK_SIZE
-  
-  while (data_idx < length) {
-    if (read_size === ATCA_BLOCK_SIZE && zone_size - cur_block * ATCA_BLOCK_SIZE < ATCA_BLOCK_SIZE) {
-      read_size = ATCA_WORD_SIZE
-      cur_offset = ((data_idx + offset) / ATCA_WORD_SIZE) % (ATCA_BLOCK_SIZE / ATCA_WORD_SIZE)
-
-      let buf = atcab_read_zone(zone, slot, cur_block, cur_offset, read_size)
-      
-      read_offset = cur_block * ATCA_BLOCK_SIZE + cur_offset * ATCA_WORD_SIZE 
-      if (read_offset < offset) {
-        read_buf_idx = offset - read_offset
-      } else {
-        read_buf_idx = 0
-      }
-
-      if (length - data_idx < read_size - read_buf_idx) {
-        copy_length = length - data_idx
-      } else {
-        copy_length = read_size - read_buf_idx
-      }
-
-      if (read_size === ATCA_BLOCK_SIZE) {
-        cur_block++
-      } else {
-        cur_offset++
-      }
-    }
-  }
-}
-
-// lib/basic/atca_basic_read.c 341
-// should return config_data
-const atcab_read_config_zone = () => 
-  // if not 204
-  atcab_read_bytes_zone('ATCA_ZONE_CONFIG', 0, 0x00) // zone, slot, offset
-  // config_data, ATCA_ECC_CONFIG_SIZE = 128, in atca_command.h +268
-
-const i2c1 = i2c.open(1, (err, bus) => {
+const i2c1 = i2c.open(1, err => {
   if (err) {
-    console.log(err)
+    console.log('failed to open i2c1')
   } else {
-    console.log(bus)
+    let ecc = new Ecc(i2c1) 
+    ecc.on('initialized', () => {
+      console.log('ecc initialized', '0x' + ecc.addr.toString(16).toUpperCase())
+
+      ;(async () => {
+        let config = await ecc.readConfigZoneAsync()
+        let arr = Array.from(config)
+          .map(x => '0x' + x.toString(16).padStart(2, '0'))
+
+        console.log(JSON.stringify(arr).replace(/"/g, ''))
+
+          console.log(config)
+  
+//        console.log(config)
+//        console.log(config[86], config[87]) 
+*/
+/**
+        config = await ecc.writeAWSConfigAsync() 
+
+        console.log(config)
+
+        await ecc.atcabLockConfigZoneAsync ()
+
+        console.log('config zone locked')
+
+        await ecc.atcabLockDataZoneAsync ()
+
+        console.log('data zone locked')
+
+        await ecc.wakeAsync()
+        await ecc.sleepAsync()
+
+        console.log('done')
+*/
+
+//        console.log(ecc.addr.toString(16))
+/**
+        let serial_number = Buffer.concat([
+          config.slice(0, 4),
+          config.slice(8, 13)
+        ])
+
+        let revision = await ecc.revisionAsync()
+
+        let rev_num = config.slice(4, 8)
+
+        for (let i = 0; i < 16; i++) {
+          let keyValid = await ecc.keyValidAsync(i)
+          console.log('key valid', keyValid)
+        }
+
+        let stateInfo = await ecc.stateInfoAsync()
+        console.log('state info', stateInfo)
+
+        let key = await ecc.atcabGenKeyAsync(0)
+        console.log('pubkey', key.length, key)
+
+        key = await ecc.atcabGenPubKeyAsync(0)
+
+        console.log('pubkey', key.length, key)
+
+//        let signAsync = async data => ecc.atcabSignAsync(0, data)
+
+        let signAsync = async data => ecc.signAsync(0, data)
+       
+        let r = await createCsrAsync('Example Inc', 'Example Device', key, signAsync)
+
+        let { subjectPublicKeyInfoPEM, toBeSigned, 
+          signature, signatureBER, certificationRequestBER } = r
+*/
+/**         
+
+        let verifyx = await ecc.verifyExternAsync(digest, sig, key)
+        console.log('verify ---------------------------')
+        console.log(verifyx)
+        console.log('verify ---------------------------')
+
+        let verify2 = await ecc.verifyExternAsync(
+          crypto.createHash('sha256').update('hello').digest()
+        , sig, key)
+
+        console.log('verify ---------------------------')
+        console.log(verify2)
+        console.log('verify ---------------------------')
+*/
+/*
+        let verify = crypto.createVerify('SHA256')
+        verify.update(toBeSigned)
+
+        console.log(subjectPublicKeyInfoPEM)
+        console.log('toBeSigned', toBeSigned.length, toBeSigned)
+        console.log('signature', signature.length, signature)
+        console.log('signatureBER', signatureBER.length, signatureBER)
+        console.log('certificationRequestBER',
+          certificationRequestBER.length, certificationRequestBER)
+        
+        console.log(verify.verify(subjectPublicKeyInfoPEM, signatureBER))
+
+//         fs.writeFileSync('cert.csr', csr)
+
+//        pubkey = await ecc.atcabGenPub
+
+//        await ecc.atcabGenKeyAsync(2)
+//        await ecc.atcabGenKeyAsync(3)
+//        await ecc.atcabGenKeyAsync(7)
+*/
+/**
+        let csr = await ecc.awsGenCsrAsync ()
+        console.log('csr', csr)
+        fs.writeFileSync('cert.csr', csr)
+*/
+
+//        let csrPEM = 
+
+//        fs.writeFileAsync('device.csr', 
+/*
+        let csrPEM = '-----BEGIN CERTIFICATE REQUEST-----\n' +
+          certificationRequestBER.toString('base64') + 
+          '\n-----END CERTIFICATE REQUEST-----'
+
+        console.log(csrPEM)
+
+        await new Promise((resolve, reject) => {
+          let cmd = `openssl req -verify -noout -in <(echo -e "${csrPEM}")` 
+          child.exec(cmd, { shell: '/bin/bash' }, (err, stdout, stderr) => {
+            if (err) reject(err)
+            if (stderr.trim() !== 'verify OK') reject('openssl output (stderr) does not match verify OK')
+            resolve()
+          })
+        })
+*/
+//        let sslVerify = await child.execAsync(`openssl req -verify -in <(echo -e "${csrPEM}")`, { shell: '/bin/bash' })
+
+/**
+      })().then(x => x).catch(e => console.log(e))
+
+    })
   }
 })
+*/
+
+
