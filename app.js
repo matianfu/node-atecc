@@ -11,57 +11,15 @@ const initEcc = require('./lib/ecc2')
 initEcc(1, (err, ecc) => {
   ecc.preset(err => {
     ecc.generateCsr({ o: 'hello', cn: 'world' }, (err, csr) => {
-      console.log(err)
-      fs.writeFileSync('deviceCsr.der', csr)
-
-      console.log('done')
-
-/*
-      const comp = async () => {
-        let signAsync = async digest => ecc.signAsync(0, digest)
-        return createCsrAsync('hello', 'world', ecc.keys[0], signAsync)
+      if (err) {
+        console.log(err)
+      } else {
+        console.log('done')
       }
-
-      comp()
-        .then(csr2 => {
-          csr2 = csr2.certificationRequestBER
-          fs.writeFileSync('oldCsr.der', csr2)
-
-          console.log('------ comparison begin ------')
-
-          console.log(csr.slice(0, 32))
-          console.log(csr2.slice(0, 32))
-          console.log('------')
-          console.log(csr.slice(32, 64))
-          console.log(csr2.slice(32, 64))
-          console.log('------')
-          console.log(csr.slice(64, 96))
-          console.log(csr2.slice(64, 96))
-          console.log('------')
-          console.log(csr.slice(96, 128))
-          console.log(csr2.slice(96, 128))
-          console.log('------')
-          console.log(csr.slice(128, 160))
-          console.log(csr2.slice(128, 160))
-          console.log('------')
-          console.log(csr.slice(160, 192))
-          console.log(csr2.slice(160, 192))
-          console.log('------')
-          console.log(csr.slice(192, 224))
-          console.log(csr2.slice(192, 224))
-          console.log('------')
-          console.log(csr.slice(224, 256))
-          console.log(csr2.slice(224, 256))
-
-        })
-        .catch(e => console.log(e))
-*/
     })
   })
 })
 
-
-//const { createCsrAsync } = require('./lib/cert')
 
 /**
 const i2c1 = i2c.open(1, err => {
