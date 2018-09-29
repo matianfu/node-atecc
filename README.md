@@ -23,11 +23,26 @@ Here is the modification of `abel` configuration from that of official project.
 3. Keys in slot 0, 6, and 7 are generated and locked after presetting. There is no way change them.
 4. The configuration is located in `lib/config.js`.
 
+# TLS
+
+The main purpose for implementing this library, is to use it with tls and aws iot.
+
+It is possible to develop an openssl engine to access atecc508a. It requires C/C++ code and openssl configuration and compilation each time openssl or node.js is upgraded.
+
+Another choice is to use node-forge, which is a pure javascript implementation of tls. Unfortunately, it does not support tls 1.2, which is a mandatory requirement by aws iot.
+
+To keep it simple with full control, we implemented a very simple tls 1.2 protocol using node.js. The project is named telsa. Though it is not a good choice for transmitting large amount of data, the performance is suffice to aws iot mqtt.
+
+mqtt.js supports external builder for creating a tls connection. So we can chain this proect, telsa, and mqtt.js, to have a pure node.js solution for using atecc508a with aws iot.
+
 # Usage
 
 see `demo.js`.
 
-# Feature and Bug
+The semantic is not optimized. May be changed in future. Also, good to hear any comments or advices.
+
+
+# Features and Bugs
 
 File an issue please.
 
