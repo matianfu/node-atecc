@@ -31,9 +31,13 @@ It is possible to develop an openssl engine to access atecc508a. It requires C/C
 
 Another choice is to use node-forge, which is a pure javascript implementation of tls. Unfortunately, it does not support tls 1.2, which is a mandatory requirement by aws iot.
 
-To keep it simple with full control, we implemented a very simple tls 1.2 protocol using node.js. The project is named telsa. Though it is not a good choice for transmitting large amount of data, the performance is suffice to aws iot mqtt.
+To keep it simple with full control, we also developped a very simple tls 1.2 implementation using node.js. The project is named `telsa`. Though it is not a good choice for transmitting large amount of data, the performance is sufficient for aws iot mqtt.
 
-mqtt.js supports external builder for creating a tls connection. So we can chain this proect, telsa, and mqtt.js, to have a pure node.js solution for using atecc508a with aws iot.
+`mqtt.js` supports external builder for creating a tls connection. So we can chain this project, `telsa`, and `mqtt.js`, to have a pure node.js solution for using atecc508a with aws iot. There is almost no external dependencies. We even handcrafted the code for asn1/csr encoding in a few dozens line of code, instead of importing external projects such as `asn1.js`, `pki.js` or `node-forge`.
+
+# OpenSSL
+
+openssl shell command is used to verify the generated csr file. It is a dependency.
 
 # Usage
 
