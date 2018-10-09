@@ -1,3 +1,4 @@
+const fs = require('fs')
 const initEcc = require('./lib/wrapper')
 
 initEcc(1, (err, ecc) => {
@@ -8,7 +9,11 @@ initEcc(1, (err, ecc) => {
       if (err) {
         console.log(err)
       } else {
-        console.log(der.toString('base64'))
+        let pem = '-----BEGIN CERTIFICATE REQUEST-----\n'
+                + der.toString('base64') + '\n'
+                + '-----END CERTIFICATE REQUEST-----\n'
+          
+        fs.writeFile('deviceCSR.pem', pem, err => console.log(err))
       }
     })
   })

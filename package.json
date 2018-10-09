@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "description": "node.js library for microchip atecc508 chip",
   "main": "index.js",
-  "directories": { 
+  "directories": {
     "lib": "lib"
   },
   "scripts": {
