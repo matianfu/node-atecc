@@ -13,7 +13,8 @@ initEcc(1, (err, ecc) => {
                 + der.toString('base64') + '\n'
                 + '-----END CERTIFICATE REQUEST-----\n'
           
-        fs.writeFile('deviceCSR.pem', pem, err => console.log(err))
+//        fs.writeFile('deviceCSR.pem', pem, err => console.log(err))
+        console.log(pem)
       }
     })
   })
