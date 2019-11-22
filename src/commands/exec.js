@@ -37,7 +37,6 @@ const CRC = data => {
  * @throws error
  */
 const i2cReadAsync = async (bus, addr, len) => {
-  console.log('i2cReadAsync', bus, addr, len)
   return new Promise((resolve, reject) => {
     const data = Buffer.alloc(len)
     bus.i2cRead(addr >> 1, len, data, err => {
@@ -85,7 +84,7 @@ const wakeAsync = async (bus, addr) => {
   /**
    * tWLO 60us + tWHI 1500us < 2ms
    */
-  await delayAsync(4)
+  await delayAsync(2)
   const rsp = await i2cReadAsync(bus, addr, 4)
   if (!rsp.equals(AFTER_WAKE)) {
     throw new Error('bad response in wake')
@@ -136,13 +135,19 @@ const sleepWakeAsync = async (bus, addr) => {
   while (true) {
     try {
       await i2cWriteAsync(bus, addr, Buffer.from([0x01]))
-    } catch (e) {}
+    } catch (e) {
+      if (e.code !== 'ENXIO') {
+        console.log('sleep token anyway', e.message)
+      }
+    }
 
     await delayAsync(4)
 
     try {
-      return await wakeAsync(bus)
-    } catch (e) {}
+      return await wakeAsync(bus, addr)
+    } catch (e) {
+      console.log('wakeAsync error', e.message)
+    }
 
     const end = new Date().getTime()
     if (end - start > 2000) {
@@ -155,6 +160,7 @@ const sleepWakeAsync = async (bus, addr) => {
 
 module.exports = {
   CRC,
+  AFTER_WAKE,
   delayAsync,
   i2cReadAsync,
   i2cWriteAsync,
