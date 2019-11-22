@@ -1,10 +1,9 @@
-
 /**
  * async delay
  * @param {number} msec - delayed time in milli-seconds
  */
-const delayAsync = async msec => 
-  new Promise((resolve, reject) => 
+const delayAsync = async msec =>
+  new Promise((resolve, reject) =>
     setTimeout(() => resolve(null), msec))
 
 /**
@@ -30,10 +29,49 @@ const CRC = data => {
 }
 
 /**
+ * read data from device
+ * @param {object} bus - i2c bus object
+ * @param {number} addr - atecc i2c address
+ * @param {number} len - data length
+ * @returns {Buffer} data read
+ * @throws error
+ */
+const i2cReadAsync = async (bus, addr, len) => {
+  console.log('i2cReadAsync', bus, addr, len)
+  return new Promise((resolve, reject) => {
+    const data = Buffer.alloc(len)
+    bus.i2cRead(addr >> 1, len, data, err => {
+      if (err) {
+        reject(err) 
+      } else {
+        resolve(data)
+      }
+    })
+  })
+}
+
+/**
+ * write data to device
+ * @param {object} bus - i2c bus object
+ * @parma {number} addr - atecc i2c address
+ * @param {Buffer} data - data to be written to device
+ */
+const i2cWriteAsync = async (bus, addr, data) => 
+  new Promise((resolve, reject) => {
+    bus.i2cWrite(addr >> 1, data.length, data, err => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(null)
+      }
+    }) 
+  })
+
+/**
  * sends a wake token to bus (broadcasting)
  */
-const wakeTokenAsync = async bus => 
-  new Promise((resolve, reject) => 
+const wakeTokenAsync = async bus =>
+  new Promise((resolve, reject) =>
     bus.i2cWrite(0x00, 1, Buffer.from([0x00]), () => resolve()))
 
 const AFTER_WAKE = Buffer.from([0x04, 0x11, 0x33, 0x43])
@@ -41,14 +79,14 @@ const AFTER_WAKE = Buffer.from([0x04, 0x11, 0x33, 0x43])
 /**
  * assuming atecc is in idle or sleep mode, wake up the chip and confirm
  * response
- */ 
-const wakeAysnc = async bus => {
+ */
+const wakeAsync = async (bus, addr) => {
   await wakeTokenAsync(bus)
   /**
-   * tWLO 60us + tWHI 1500us < 2ms 
+   * tWLO 60us + tWHI 1500us < 2ms
    */
-  await delayAsync(4) 
-  const rsp = await i2cReadAsync(bus, 4) 
+  await delayAsync(4)
+  const rsp = await i2cReadAsync(bus, addr, 4)
   if (!rsp.equals(AFTER_WAKE)) {
     throw new Error('bad response in wake')
   }
@@ -58,9 +96,9 @@ const wakeAysnc = async bus => {
  * assuming atecc is in awake mode, put the chip into idle
  */
 const idleAsync = async bus => {
-  await i2cWriteAsync(bus, Buffer.from([0x02]))  
+  await i2cWriteAsync(bus, Buffer.from([0x02]))
   try {
-    const rsp = await i2cReadAsync(bus, 4)
+    await i2cReadAsync(bus, addr, 4)
   } catch (e) {
     if (e.code === 'ENXIO') return
     throw e
@@ -74,13 +112,13 @@ const idleAsync = async bus => {
 const sleepAsync = async bus => {
   // issue a sleep token and check result
   try {
-    await i2cWriteAsync(bus, Buffer.from([0x01])
+    await i2cWriteAsync(bus, Buffer.from([0x01]))
   } catch (e) {
     if (e.code === 'ENXIO') {
       // the chip may be busy, idle, or sleep
     }
   }
-}  
+}
 
 /**
  * assuming atecc is in any state: busy, idle, sleep, or awake.
@@ -93,11 +131,11 @@ const sleepAsync = async bus => {
  * - atecc608a m1 295ms (Sign)
  * - atecc608a m2 1085ms (Verify)
  */
-const sleepWakeAsync = async bus => {
+const sleepWakeAsync = async (bus, addr) => {
   const start = new Date().getTime()
   while (true) {
-    try { 
-      await i2cWriteAsync(bus, Buffer.from([0x01])) 
+    try {
+      await i2cWriteAsync(bus, addr, Buffer.from([0x01]))
     } catch (e) {}
 
     await delayAsync(4)
@@ -107,7 +145,7 @@ const sleepWakeAsync = async bus => {
     } catch (e) {}
 
     const end = new Date().getTime()
-    if (end - start > 2000) { 
+    if (end - start > 2000) {
       const err = new Error('timeout')
       err.code = 'ETIMEOUT'
       throw err
@@ -115,4 +153,13 @@ const sleepWakeAsync = async bus => {
   }
 }
 
-
+module.exports = {
+  CRC,
+  delayAsync,
+  i2cReadAsync,
+  i2cWriteAsync,
+  wakeAsync,
+  idleAsync,
+  sleepAsync,
+  sleepWakeAsync
+}
