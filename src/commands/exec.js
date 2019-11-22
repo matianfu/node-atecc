@@ -41,7 +41,7 @@ const i2cReadAsync = async (bus, addr, len) => {
     const data = Buffer.alloc(len)
     bus.i2cRead(addr >> 1, len, data, err => {
       if (err) {
-        reject(err) 
+        reject(err)
       } else {
         resolve(data)
       }
@@ -55,7 +55,7 @@ const i2cReadAsync = async (bus, addr, len) => {
  * @parma {number} addr - atecc i2c address
  * @param {Buffer} data - data to be written to device
  */
-const i2cWriteAsync = async (bus, addr, data) => 
+const i2cWriteAsync = async (bus, addr, data) =>
   new Promise((resolve, reject) => {
     bus.i2cWrite(addr >> 1, data.length, data, err => {
       if (err) {
@@ -63,7 +63,7 @@ const i2cWriteAsync = async (bus, addr, data) =>
       } else {
         resolve(null)
       }
-    }) 
+    })
   })
 
 /**
@@ -92,10 +92,11 @@ const wakeAsync = async (bus, addr) => {
 }
 
 /**
- * assuming atecc is in awake mode, put the chip into idle
+ * assuming atecc is awake, put it into idle mode and verify
+ * it could not respong to read
  */
-const idleAsync = async bus => {
-  await i2cWriteAsync(bus, Buffer.from([0x02]))
+const idleAsync = async (bus, addr) => {
+  await i2cWriteAsync(bus, addr, Buffer.from([0x02]))
   try {
     await i2cReadAsync(bus, addr, 4)
   } catch (e) {
@@ -106,17 +107,18 @@ const idleAsync = async bus => {
 }
 
 /**
- * assuming atecc is in any mode. try its best to put the chip into sleep mode
+ * assuming atecc is awake, put it into sleep mode and verify
+ * it could not respond to read
  */
-const sleepAsync = async bus => {
-  // issue a sleep token and check result
+const sleepAsync = async (bus, addr) => {
+  await i2cWriteAsync(bus, addr, Buffer.from([0x01]))
   try {
-    await i2cWriteAsync(bus, Buffer.from([0x01]))
+    await i2cReadAsync(bus, addr, 4)
   } catch (e) {
-    if (e.code === 'ENXIO') {
-      // the chip may be busy, idle, or sleep
-    }
+    if (e.code === 'ENXIO') return
+    throw e
   }
+  throw new Error('sleep failed')
 }
 
 /**

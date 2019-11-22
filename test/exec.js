@@ -22,16 +22,34 @@ const i2c1 = i2c.openSync(1)
 const addr = 0xC0
 
 describe(path.basename(__filename), () => {
-  it('sleep-wake, read', async () => {
+  it('sleep-wake', async () => {
     await sleepWakeAsync(i2c1, addr)
-    const rsp = await i2cReadAsync(i2c1, addr, 4)
-    expect(rsp.equals(AFTER_WAKE)).to.be.true
   })
 
-  it('sleep-wake, sleep-wake, read', async () => {
+  it('sleep-wake, sleep', async () => {
     await sleepWakeAsync(i2c1, addr)
-    await sleepWakeAsync(i2c1, addr)
-    const rsp = await i2cReadAsync(i2c1, addr, 4)
-    expect(rsp.equals(AFTER_WAKE)).to.be.true
+    await sleepAsync(i2c1, addr)
   })
+
+  it('sleep-wake, idle', async () => {
+    await sleepWakeAsync(i2c1, addr)
+    await idleAsync(i2c1, addr)
+  })
+
+  it('sleep-wake, sleep-wake', async () => {
+    await sleepWakeAsync(i2c1, addr)
+    await sleepWakeAsync(i2c1, addr)
+  })
+
+  it('sleep-wake, sleep-wake, idle', async () => {
+    await sleepWakeAsync(i2c1, addr)
+    await sleepWakeAsync(i2c1, addr)
+    await idleAsync(i2c1, addr)
+  }) 
+
+  it('sleep-wake, sleep-wake, sleep', async () => {
+    await sleepWakeAsync(i2c1, addr)
+    await sleepWakeAsync(i2c1, addr)
+    await sleepAsync(i2c1, addr)
+  }) 
 })
